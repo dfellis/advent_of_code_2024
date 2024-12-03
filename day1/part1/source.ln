@@ -1,0 +1,32 @@
+type File <-- '@std/fs';
+fn string <-- '@std/fs';
+
+export fn main {
+  // Load the indexes
+  let input = File('./input.txt').string!!;
+  // Split into two arrays
+  let arrs = input
+    .trim
+    .split('\n')
+    .reduce({Array{i64}, Array{i64}}(Array{i64}(), Array{i64}()), fn (arrs: (Array{i64}, Array{i64}), line: string) {
+      // Get the two parts of the line converted into an array of two integers
+      let parts = line
+        .split(' ')
+        .filter(fn (s: string) = s.len > 1) // JS converts whitespace strings to 0...
+        .map(i64)
+        .filter(fn (n: i64!) = n ?? -1 != -1) // This would be better with a `success` built-in function, I think
+        .map(fn (n: i64!) = n!!); // There's a bug preventing me from doing `.map(getOrExit);`
+      // Push them into the separate arrays that we want them in
+      arrs.0.push(parts[0]!!);
+      arrs.1.push(parts[1]!!);
+      return arrs;
+    });
+  // Sort the two arrays
+  arrs.0.sort;
+  arrs.1.sort;
+  // Compute the deltas, sum them, and print
+  arrs.0
+    .map(fn (val: i64, idx: i64) = abs(val - (arrs.1[idx]!!)))
+    .reduce(add)
+    .print;
+}
