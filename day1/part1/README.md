@@ -1,5 +1,7 @@
 # Day 1 Part 1
 
+![Syntax Highlighted Source Code](./source.png)
+
 ## Implemented with [this Alan commit](https://github.com/alantech/alan/commit/e17a201a9a261780a36143b174c14310db837308)
 
 ## Required PRs
