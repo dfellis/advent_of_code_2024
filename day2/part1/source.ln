@@ -1,0 +1,48 @@
+type File <-- '@std/fs';
+fn string <-- '@std/fs';
+
+type Tracking = prev: i64?, polarity: i64, safe: bool;
+
+export fn main {
+  // Load the indexes
+  let input = File('./input.txt').string!!;
+  // Split into two arrays
+  let arrs = input
+    .trim
+    .split('\n')
+    .reduce(Array{Array{i64}}(), fn (arrs: Array{Array{i64}}, line: string) {
+      let numbers = line
+        .split(' ')
+        .filter(fn (s: string) = s != ' ')
+        .map(i64)
+        .filter(fn (n: i64!) = n ?? -1 != -1)
+        .map(fn (n: i64!) = n!!);
+      arrs.push(numbers);
+      return arrs;
+    });
+  arrs
+    .map(fn (arr: i64[]) = arr
+      .reduce(Tracking({i64?}(), 0, true), fn (tracking: Tracking, val: i64) = if(!tracking.safe,
+        tracking,
+        if(tracking.prev.exists,
+          fn {
+            let diff = (tracking.prev!!) - val;
+            let mag = abs(diff);
+            let dir = if(mag == 0, fn = 0, fn = diff / mag);
+            return if(tracking.polarity == 0 || dir == tracking.polarity,
+              if(mag > 0 && mag < 4,
+                Tracking({i64?}(val), dir, true),
+                Tracking(tracking.prev, 0, false)
+              ),
+              Tracking(tracking.prev, 0, false)
+            );
+          },
+          fn = Tracking({i64?}(val), 0, true)
+        )
+      ))
+    )
+    .filter(fn (v: Tracking) = v.safe)
+    .len
+    .print;
+}
+
