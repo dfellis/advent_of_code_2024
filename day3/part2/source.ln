@@ -1,0 +1,47 @@
+type File <-- '@std/fs';
+fn string <-- '@std/fs';
+
+export fn main {
+  let input = File('./input.txt').string!!;
+  // Because the accepted input is so rigid, we can use `split` to get this done
+  input
+    // We know that the beginning of the input *and* anything immediately following a `do()` is
+    // enabled, while anything following a `don't()` is disabled. So if we split the input by `do()`
+    // we know the first part is viable, then we can split that by `don't()` and *only the first*
+    // result from that is viable. We can then toss the non-viable parts of the input, re-join the
+    // viable parts together, and proceed with the same solution as before.
+    .split('do()')
+    .map(fn (segment: string) = segment.split("don't()")[0]!!)
+    .join('')
+    // Everything after a split is a potential solution, so all strings except *probably* the first
+    // But we'll consider everything regardless
+    .split('mul(')
+    .map(fn (segment: string) {
+      // In this case *only* the first segment of the split, if it exists, can possibly be what we
+      // are after, so we immediately ignore everything else in this segment of the string
+      let maybeArgs = segment.split(')')[0];
+      return if(maybeArgs.exists, fn {
+        // We know in this branch that they do exist, so we can just confirm that they are valid
+        // and then use them
+        let args = (maybeArgs!!).split(',');
+        return if(args.len == 2, fn {
+          // We know there are exactly two args in this `mul` call, now we need to confirm that they
+          // conform to the rules: 1-3 characters long and all characters are digits for each
+          let arg0 = args[0]!!;
+          let arg1 = args[1]!!;
+          let arg0MaybeNum = i64(arg0);
+          let arg1MaybeNum = i64(arg1);
+          let isValid = arg0.len > 0 && arg0.len < 4 && arg1.len > 0 && arg1.len < 4 &&
+            arg0.trim.len == arg0.len && arg1.trim.len == arg1.len &&
+            arg0MaybeNum ?? -1 != -1 && arg1MaybeNum ?? -1 != -1;
+          return if(isValid, fn {
+            // We have valid numbers, let's multiply them and return them
+            return arg0MaybeNum!! * arg1MaybeNum!!;
+          }, fn = 0);
+        }, fn = 0);
+      }, fn = 0);
+    })
+    .reduce(add)
+    .print;
+}
+
