@@ -6,7 +6,7 @@
 
 ## Required PRs
 
-No extra PRs required beyond Day 3 Part 1.
+No extra PRs required beyond Day 4 Part 1.
 
 ## Build and run commands
 
