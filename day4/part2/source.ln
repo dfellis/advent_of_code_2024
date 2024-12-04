@@ -1,0 +1,23 @@
+type File <-- '@std/fs';
+fn string <-- '@std/fs';
+
+export fn main {
+  let input = File('./input.txt').string!!;
+  // We want a array of character arrays to do this
+  let a = input.split('\n').map(fn (line: string) = line.split(''));
+  // For a valid X-MAS, there are four possible Xs:
+  // M S  M M  S M  S S
+  //  A    A    A    A
+  // M S  S S  S M  M M
+  // Taken from Left-to-Right, Top-To-Bottom, we get the strings:
+  // MSAMS, MMASS, SMASM, SSAMM
+  // We can similarly scan over the whole array-of-arrays as before, but this time we pluck one
+  // set of character coordinates out and then return 1 if any of the strings match and 0 otherwise
+  let possibleXMases = ["MSAMS", "MMASS", "SMASM", "SSAMM"];
+  a.map(fn (line: string[], i: i64) = line.map(fn (_char: string, j: i64) {
+    let x = 'x';
+    let xMas = [a[i][j] ?? x, a[i][j+2] ?? x, a[i+1][j+1] ?? x, a[i+2][j] ?? x, a[i+2][j+2] ?? x].join('');
+    return if(possibleXMases.some(fn (x: string) = x == xMas), 1, 0);
+  }).reduce(add)!!).reduce(add).print;
+}
+

@@ -1,0 +1,28 @@
+type File <-- '@std/fs';
+fn string <-- '@std/fs';
+
+export fn main {
+  let input = File('./input.txt').string!!;
+  // We want a array of character arrays to do this
+  let a = input.split('\n').map(fn (line: string) = line.split(''));
+  // For a valid XMAS, there are 8 directions starting from the X that we can construct it from,
+  // North, North-East, East, South-East, South, South-West, West, and North-West. For the given
+  // (I, J) coordinate of an `X` character we can check all of those directions for a match and
+  // return the number of matches we found. In fact, we don't need to filter on the `X` at all, as
+  // that will always return `0` when `X` is not the character and we don't mind. In Alan, invalid
+  // index accesses return an Error instead of the character, so we can just replace that with `x`
+  // when constructing the test string and guarantee a failure. (As it is not capitalized)
+  a.map(fn (line: string[], i: i64) = line.map(fn (_char: string, j: i64) {
+    let x = 'x';
+    return [
+      [a[i][j] ?? x, a[i][j - 1] ?? x,     a[i][j - 2] ?? x,     a[i][j - 3] ?? x    ].join(''), // N
+      [a[i][j] ?? x, a[i + 1][j - 1] ?? x, a[i + 2][j - 2] ?? x, a[i + 3][j - 3] ?? x].join(''), // NE
+      [a[i][j] ?? x, a[i + 1][j] ?? x,     a[i + 2][j] ?? x,     a[i + 3][j] ?? x    ].join(''), // E
+      [a[i][j] ?? x, a[i + 1][j + 1] ?? x, a[i + 2][j + 2] ?? x, a[i + 3][j + 3] ?? x].join(''), // SE
+      [a[i][j] ?? x, a[i][j + 1] ?? x,     a[i][j + 2] ?? x,     a[i][j + 3] ?? x    ].join(''), // S
+      [a[i][j] ?? x, a[i - 1][j + 1] ?? x, a[i - 2][j + 2] ?? x, a[i - 3][j + 3] ?? x].join(''), // SW
+      [a[i][j] ?? x, a[i - 1][j] ?? x,     a[i - 2][j] ?? x,     a[i - 3][j] ?? x    ].join(''), // W
+      [a[i][j] ?? x, a[i - 1][j - 1] ?? x, a[i - 2][j - 2] ?? x, a[i - 3][j - 3] ?? x].join('')  // NW
+    ].filter(fn (xmas: string) = xmas == 'XMAS').len;
+  }).reduce(add)!!).reduce(add).print;
+}
