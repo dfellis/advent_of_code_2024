@@ -1,0 +1,54 @@
+type File <-- '@std/fs';
+fn string <-- '@std/fs';
+
+type TrackPages = success: bool, seen: Set{i64};
+
+export fn main {
+  let input = File('./input.txt').string!!;
+  // Our input is in two parts, the page ordering rules, and the pages-to-print lists. They're
+  // separated by a blank line, so first we split the input by `\n\n`
+  let parts = input.split('\n\n');
+  let rules = parts[0]!!;
+  let pages = parts[1]!!;
+  // We can convert the rules into a Dictionary of Sets of pages with the Key being the first number
+  // and the value being all of the second numbers that are ever defined for the first number.
+  let lookup = rules.trim.split('\n').map(fn (line: string) {
+    let parts = line.split('|');
+    let keyNumber = i64(parts[0]!!)!!;
+    let valNumber = i64(parts[1]!!)!!;
+    return {i64, i64}(keyNumber, valNumber);
+  }).reduce(Dict{i64, Set{i64}}(), fn (lookup: Dict{i64, Set{i64}}, pair: (i64, i64)) {
+    if(lookup.has(pair.0), fn {
+      let lookupSet = lookup[pair.0]!!;
+      lookupSet.store(pair.1);
+      lookup[pair.0] = lookupSet;
+    }, fn {
+      lookup[pair.0] = Set(pair.1);
+    });
+    return lookup;
+  });
+  // To check the listings of pages to print, we first need to parse it into an array of arrays
+  let prints = pages.trim.split('\n').map(fn (line: string) = line
+    .split(',').map(fn (val: string) = val.i64!!));
+  // Now we can iterate over this array. We reduce each array into a tuple with a boolean success
+  // and a Set of seen pages. Since Alan doesn't have anonymous tuples, yet, a type for this has
+  // been defined above; and since we're defining a custom type, we may as well give the fields
+  // better labels than .0, .1, etc
+  prints.map(fn (print: i64[]) {
+    let correct = print.reduce(TrackPages(true, Set{i64}()), fn (tracking: TrackPages, page: i64) {
+      if(tracking.success, fn {
+        let followupPages = lookup[page] ?? Set{i64}();
+        let outOfOrderPages = followupPages.intersect(tracking.seen);
+        tracking.seen.store(page);
+        if(outOfOrderPages.len > 0, fn {
+          tracking.success = false;
+        });
+      });
+      return tracking;
+    }).success;
+    return if(correct, print[print.len / 2], {i64?}());
+  }).filter(fn (maybeMiddlePage: i64?) = maybeMiddlePage.exists)
+  .map(fn (middlePage: i64?) = middlePage!!)
+  .reduce(add).print;
+}
+
