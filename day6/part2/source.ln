@@ -1,0 +1,83 @@
+type File <-- '@std/fs';
+fn string <-- '@std/fs';
+fn while <-- '@std/seq';
+
+export fn main {
+  let start = now();
+  let input = File('./input.txt').string!!;
+  // The input is a map, from it we will extract two pieces of information: where the guard is (and
+  // is facing) and where the obstacles are. We'll put the obstacle locations into a Set of i64[2]
+  // buffers representing X, Y coordinates and the guard goes into a mutable i64[4] buffer. The
+  // first two buffer values represent the X, Y coordinates, and the second two represent the delta
+  // direction to *attempt* to move into, which will be mutated to a different direction if there is
+  // an obstacle in the chosen direction. Each time the guard's position is updated (including the
+  // initial creation), that position will be added to a second `Set{i64[2]}`. When the guard goes
+  // out-of-bounds (any of the position coordinates being below zero or equal to the relevant array
+  // length) the calculation is complete and the number of values of the guard position set printed.
+  let grid = input.trim.split('\n').map(fn (line: string) = line.trim.split(''));
+  let maxX = len(grid[0]!!);
+  let maxY = grid.len;
+  let guard = {i64[4]}(-1, -1, -1, -1);
+  let obstacles = Set{i64[2]}();
+  grid.map(fn (line: string[], y: i64) = line.map(fn (char: string, x: i64) {
+    if(char == '#', fn {
+      obstacles.store({i64[2]}(x, y));
+    });
+    if(char == '^', fn {
+      guard.0 = x;
+      guard.1 = y;
+      guard.2 = 0;
+      guard.3 = -1;
+    });
+  }));
+  // We need to test each position a single obstacle can be added to see if it enters a loop or not
+  // if it does, we count it. If the obstacle location already has an obstacle or it has the current
+  // location of the guard, we skip that option. So the part 1 code is mostly executed in a loop,
+  // with some modifications.
+  grid.map(fn (line: string[], y: i64) = line.map(fn (char: string, x: i64) {
+    ['Test ', (x + maxX *y + 1).string, ' of ', string(maxX * maxY), ': '].join('').stdout;
+    return if(char == '#' || char == '^', fn {
+      print('Preexisting obstacle detected');
+      return 0;
+    }, fn {
+      let o = obstacles.clone;
+      let g = guard.clone;
+      o.store({i64[2]}(x, y));
+      let guardStates = Set{i64[4]}();
+      let loopFound = false;
+      while(fn = g.0 > -1 && g.0 < maxX && g.1 > -1 && g.1 < maxY && !loopFound, fn {
+        // First, record the guard's current state (we do this before moving so we don't store an
+        // out-of-bounds location) or declare a loop was found and exit if the state already exists
+        if(guardStates.has(g), fn {
+          loopFound = true;
+        }, fn {
+          guardStates.store(g.clone);
+        });
+        // Now we do one of two things: if there's an obstacle in our way, we rotate the direction.
+        // If there is not, we simply move the guard to those coordinates. Since there are only four
+        // directions to choose, I looked at all of them and figured out a pair of equations that
+        // will compute the new direction based on the prior one: `xNew = yPrev * -1` and
+        // `yNew = xPrev`.
+        let newLocation = {i64[2]}(g.0 + g.2, g.1 + g.3);
+        if(o.has(newLocation), fn {
+          let xNew = g.3 * -1;
+          let yNew = g.2.clone; // This clone is needed for JS generation
+          g.2 = xNew;
+          g.3 = yNew;
+        }, fn {
+          g.0 = newLocation.0;
+          g.1 = newLocation.1;
+        });
+      });
+      return if(loopFound, fn {
+        print('Loop found!');
+        return 1;
+      }, fn {
+        print('No loop detected');
+        return 0;
+      });
+    });
+  }).reduce(add)!!).reduce(add).print;
+  'Total run time: '.concat(start.elapsed.f64.string(2)).concat(' sec').print;
+}
+
