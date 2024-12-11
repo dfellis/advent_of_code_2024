@@ -1,0 +1,44 @@
+type File <-- '@std/fs';
+fn string <-- '@std/fs';
+fn while <-- '@std/seq';
+
+export fn main {
+  let input = File('./input.txt').string!!;
+  // The input is a listing of expected values separated by a colon and then space separated numbers
+  // that can be added or multiplied (in list order, not precedence order) to produce the expected
+  // value... or not, and then should be ignored. All of the expected values that can be computed
+  // with the provided list of numbers are then added together and printed
+  input.trim.split('\n').map(fn (line: string) {
+    let parts = line.trim.split(':');
+    let expected = i64(parts[0]!!)!!;
+    let list = (parts[1]!!).trim.split(' ').map(fn (n: string) = n.i64!!);
+    // So here's the trick to the algorithm: we have two options of operation between each pair of
+    // elements: add or mul. That means n-1 operations for a list of length n, and so 2 ** (n - 1)
+    // possible combinations of add and mul. With the options being binary, it becomes easy to just
+    // use an iterator of numbers from 0 to 2 ** (n - 1) - 1 and then use the bit representation of
+    // that number to determine the operation to perform, making it possible to make the test a
+    // simple `reduce` operation and wrapping it all in a while loop to generate the iterator but
+    // still exit early when a match is found.
+    let found = false;
+    let i = 0;
+    let max = 2 ** (list.len - 1);
+    while(fn = i < max && !found, fn {
+      // We make a clone of the iterator to use as our bit representation, which we we mask the
+      // the first bit and compare with zero to choose to add (true) or multiply (false), then shift
+      // the bits one to the right and continue;
+      let bits = i.clone;
+      let val = list.reduce(fn (a: i64, b: i64) {
+        let out = if((bits & 1) == 0, fn = a + b, fn = a * b);
+        let newBits = bits >> 1; // This shouldn't be necessary
+        bits = newBits;
+        return out;
+      })!!;
+      if(val == expected, fn {
+        found = true;
+      });
+      let nextI = i + 1; // This shouldn't be necessary
+      i = nextI;
+    });
+    return if(found, expected, 0);
+  }).reduce(add).print;
+}

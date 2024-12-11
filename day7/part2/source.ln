@@ -1,0 +1,47 @@
+type File <-- '@std/fs';
+fn string <-- '@std/fs';
+fn while <-- '@std/seq';
+
+export fn main {
+  let input = File('./input.txt').string!!;
+  // The input is a listing of expected values separated by a colon and then space separated numbers
+  // that can be added multiplied or concatenated (in list order, not precedence order) to produce
+  // the expected value... or not, and then should be ignored. All of the expected values that can
+  // be computed with the provided list of numbers are then added together and printed
+  input.trim.split('\n').map(fn (line: string) {
+    let parts = line.trim.split(':');
+    let expected = i64(parts[0]!!)!!;
+    let list = (parts[1]!!).trim.split(' ').map(fn (n: string) = n.i64!!);
+    // Of course the binary cleanliness had to be broken with a new operation, it was too pure to
+    // survive this world. But the evil of Javascript-style accidental concatenation where 1 and 1
+    // equals 11 is just too much! But we can do approximately the same thing as before. Now the
+    // choice value is from 0 to 3 ** (n - 1) - 1 and instead of a cheap bitwise-and right-shift, we
+    // must instead do an integer modulus by 3 and then an integer divide by 3, which will be slower
+    let found = false;
+    let i = 0;
+    let max = 3 ** (list.len - 1);
+    while(fn = i < max && !found, fn {
+      // We make a clone of the iterator to use as our bit representation, which we we mask the
+      // the first bit and compare with zero to choose to add (true) or multiply (false), then shift
+      // the bits one to the right and continue;
+      let bits = i.clone;
+      let val = list.reduce(fn (a: i64, b: i64) {
+        let out = if((bits % 3) == 0,
+          fn = a + b,
+          fn = if((bits % 3) == 1,
+            fn = a * b,
+            fn = i64(a.string.concat(b.string))!!));
+        let newBits = bits / 3; // This shouldn't be necessary
+        bits = newBits;
+        return out;
+      })!!;
+      if(val == expected, fn {
+        found = true;
+      });
+      let nextI = i + 1; // This shouldn't be necessary
+      i = nextI;
+    });
+    return if(found, expected, 0);
+  }).reduce(add).print;
+}
+
